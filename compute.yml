@@ -9,7 +9,7 @@
 - name: security and errata
   hosts: compute
   roles:
-    - role: security_errata
+    - role: security_errata-ppc
       tags: ['common', 'security', 'errata']
 
 

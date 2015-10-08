@@ -16,6 +16,8 @@ xtradb:
 percona:
   replication: False
 
+fqdn: openstack.example.org
+
 heat:
  enabled: true
 
