@@ -1,0 +1,13 @@
+---
+# Power: Added neutron plugins for ovs
+- name: install other ovs packages
+  apt: pkg={{ item }} 
+  with_items:
+    - openvswitch-switch
+    - vlan
+    - bridge-utils
+    - neutron-plugin-ml2
+    - neutron-plugin-openvswitch-agent
+
+- name: ovs int bridge
+  ovs_bridge: name=br-int state=present

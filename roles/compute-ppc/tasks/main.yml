@@ -1,0 +1,88 @@
+---
+- include: proxy.yml
+
+- name: update apt index
+  apt: update_cache=yes cache_valid_time=3600
+  tags: ['prereboot']
+
+- include: system-tools.yml
+
+- name: python dependencies
+  apt: pkg={{ item }}
+  with_items:
+    - python-pip
+    - python-libxml2
+    - python-lxml
+    - python-greenlet
+    - python-openssl
+    - python2.7-dev
+    - python-httplib2
+    - python-software-properties
+    - python-virtualenv
+    - python-mysqldb
+    - python-jinja2
+    - cryptsetup
+    - libffi-dev
+    - libssl-dev
+    - libxml2-dev
+    - libxslt1-dev
+
+- include: pip.yml
+  tags: pip
+
+# update any greelet, for nova-common update to work
+- name: Greenlet update and config
+  command: "{{item}}"
+  with_items:
+     - pip install --upgrade greenlet
+     - apt-get source python-greenlet
+
+- name: Run Greenlet setup file  
+  shell: ./setup.py install chdir=/root/python-greenlet-0.4.5
+
+- name: set UTC timezone
+  template: src=etc/timezone dest=/etc/timezone owner=root group=root mode=0644
+  notify:
+    - update timezone
+
+- name: /opt/stack
+  file: dest=/opt/stack state=directory
+
+- include: python.yml
+
+- include: ssl.yml tags=ssl
+
+- include: ssh.yml
+
+- include: networking.yml
+
+- include: ufw.yml
+
+- include: ntp.yml
+
+- include: ipmi.yml
+  when: common.ipmi.enabled
+  tags: ['prereboot']
+
+- include: kernel-tuning.yml
+  tags: ['prereboot']
+
+- include: disable-swap.yml
+
+- name: fetch Ursula revision
+  local_action: command git describe --tags
+  run_once: true
+  sudo: no
+  register: ursula_git_describe
+
+- name: store Ursula revision
+  set_fact: ursula_revision={{ ursula_git_describe.stdout }}
+
+# run this last so we only update if run was successful
+- name: drop an motd with ursula metadata
+  action: template src=etc/motd.tail dest=/etc/motd.tail mode=0644
+  changed_when: False
+
+- name: include stack name in /etc/issue
+  lineinfile: dest=/etc/issue regexp="^{{ stack_env }} OpenStack Node" line="{{ stack_env }} OpenStack Node"
+

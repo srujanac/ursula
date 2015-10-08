@@ -1,0 +1,4 @@
+---
+- name: setup openstack current base path
+  file: dest=/opt/openstack state=directory
+

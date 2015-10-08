@@ -1,0 +1,110 @@
+---
+- name: install common neutron packages
+  apt: pkg={{ item }}
+  with_items:
+    - vlan
+    - bridge-utils
+
+- name: configure VXLAN to use IANA assigned port 4789
+  copy: content="options vxlan udp_port=4789"
+        dest=/etc/modprobe.d/vxlan-port.conf owner=root group=root mode=0644
+
+- name: check if neutron user exists
+  shell: getent passwd neutron
+  register: neutron_user
+  failed_when: False
+  changed_when: False
+
+- name: neutron user
+  user: name=neutron shell=/bin/false createhome=no
+  when: neutron_user|success
+
+- name: neutron user
+  user: name=neutron comment=neutron shell=/bin/false system=yes
+        home=/nonexistent createhome=no
+  when: not neutron_user|success
+
+- name: neutron sudoer
+  template: src=etc/sudoers.d/neutron
+            dest=/etc/sudoers.d/neutron
+            owner=root
+            group=root
+            mode=0440
+
+- name: neutron etc directories
+  file: dest=/etc/neutron/services/loadbalancer/haproxy state=directory
+
+- name: neutron libdir
+  file: dest=/var/lib/neutron state=directory owner=neutron
+
+- name: neutron cache dir
+  file: dest=/var/cache/neutron state=directory mode=0700
+        owner=neutron group=neutron
+
+- name: neutron log dir
+  file: dest=/var/log/neutron state=directory mode=0755
+        owner=neutron group=neutron
+
+# Neutron needs the service tenant id. This goes away after juno
+# when neutron can use tenant_name.
+- name: Fetch service tenant info from keystone
+  keystone_user: tenant=service
+                 endpoint=https://{{ endpoints.main }}:5001/v2.0/
+                 login_tenant_name=admin
+                 login_user=provider_admin
+                 login_password={{ secrets.provider_admin_password }}
+  register: service_tenant
+
+- name: neutron config
+  template: src={{ item }} dest=/etc/neutron mode=0644
+  with_fileglob: ../templates/etc/neutron/*
+  notify:
+     - restart neutron services
+
+- name: error for unknown plugin
+  fail: msg="Invalid Neutron plugin, must be either ml2 or ovs"
+  when: neutron.plugin != 'ovs' and neutron.plugin != 'ml2'
+
+- name: ml2 plugin dir
+  file: dest=/etc/neutron/plugins/ml2 state=directory
+  when: neutron.plugin == 'ml2'
+
+- name: ml2 config
+  template: src=etc/neutron/plugins/ml2/ml2_plugin.ini
+            dest=/etc/neutron/plugins/ml2/ml2_plugin.ini
+            mode=0644
+  when: neutron.plugin == 'ml2'
+  notify:
+    - restart neutron services
+
+- name: ovs plugin dir
+  file: dest=/etc/neutron/plugins/openvswitch state=directory
+  when: neutron.plugin == 'ovs'
+
+- name: ovs config
+  template: src=etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+            dest=/etc/neutron/plugins/openvswitch/ovs_neutron_plugin.ini
+            mode=0644
+  when: neutron.plugin == 'ovs'
+  notify:
+    - restart neutron services
+
+- name: neutron stop all script
+  template: src=usr/local/bin/neutron-stop-all
+            dest=/usr/local/bin/neutron-stop-all
+            mode=0755
+
+- name: neutron start all script
+  template: src=usr/local/bin/neutron-start-all
+            dest=/usr/local/bin/neutron-start-all
+            mode=0755
+
+- name: neutron restart all script
+  template: src=usr/local/bin/neutron-restart-all
+            dest=/usr/local/bin/neutron-restart-all
+            mode=0755
+
+- include: logging.yml
+  tags:
+    - logrotate
+    - logging

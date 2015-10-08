@@ -1,0 +1,18 @@
+---
+common:
+  ipmi:
+    enabled: True
+    serial_console: ttyS1
+    state: probe
+    baud_rate: 115200
+  python_extra_packages: []
+  ssh_private_keys: []
+  ssh:
+    allow_from:
+      - 0.0.0.0/0
+      - ::/0
+    disable_root: False
+    disable_dns: True
+  pip_version: 1.4.1
+  setuptools_version: 18.3.2
+

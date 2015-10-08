@@ -1,0 +1,15 @@
+---
+dependencies:
+  - role: monitoring-common
+  - role: openstack-source
+    project_name: nova
+    project_rev: "{{ nova.source.rev }}"
+    rootwrap: True
+    python_requirements:
+      - { name: functools32 }
+    when: openstack_install_method == 'source'
+  - role: openstack-package-ppc
+    project_name: nova
+    rootwrap: True
+    package_alternatives: "{{ nova.package.console_scripts }}"
+    when: openstack_install_method == 'package'

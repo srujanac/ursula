@@ -1,0 +1,6 @@
+---
+- name: restart nova services
+  service: name={{ item }} state=restarted must_exist=false
+  when: restart|default('True')
+  with_items:
+    - nova-compute

@@ -1,0 +1,52 @@
+---
+- name: common role for compute host
+  hosts: compute 
+  gather_facts: force
+  roles:
+    - role: compute-ppc
+      tags: ['common','common-base']
+
+- name: security and errata
+  hosts: compute
+  roles:
+    - role: security_errata
+      tags: ['common', 'security', 'errata']
+
+
+- name: neutron core data plane
+  gather_facts: force
+  hosts: compute
+  vars:
+    primary_interface: 'ansible_eth6'
+  roles:
+    - role: neutron-data-ppc
+      tags: ['openstack', 'neutron', 'data']
+
+# OPENSTACK SERVICES
+- name: openstack client tools
+  hosts: compute
+  roles:
+    - role: client
+      tags: ['openstack', 'client']
+
+- name: nova data plane
+  gather_facts: force
+  hosts: compute 
+  vars: 
+    primary_interface: 'ansible_eth6'
+  roles:
+    - role: nova-data-ppc
+      tags: ['openstack', 'nova', 'data']
+      when: not ironic.enabled|bool
+
+- name: extra neutron setup
+  hosts: network:compute
+  tasks:
+    - name: restart neutron-plugin-openvswitch-agent to ensure VXLAN mesh is configured
+      service: name=neutron-plugin-openvswitch-agent state=restarted
+
+- name: cleanup ansible proxy
+  hosts: compute
+  tasks:
+    - include: roles/common/tasks/noproxy.yml
+      when: common.ansible_proxy is defined

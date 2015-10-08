@@ -1,0 +1,39 @@
+---
+- name: nova user
+  user: name=nova comment=nova shell=/bin/sh system=yes home=/var/lib/nova
+        createhome=yes generate_ssh_key=yes ssh_key_bits=4096
+
+- name: nova packages
+  apt: 
+    pkg="{{ item }}"
+  with_items: nova.install_packages
+
+- name: install compute package
+  apt: pkg=nova-compute
+       update_cache=yes cache_valid_time=3600
+
+
+- file: dest=/etc/nova state=directory
+- file: dest=/var/lib/nova state=directory owner=nova
+- file: dest=/var/cache/nova state=directory mode=0700 owner=nova group=nova
+- file: dest=/var/log/nova state=directory mode=0755 owner=nova group=nova
+
+- name: nova config
+  action: template src={{ item }} dest=/etc/nova mode=0644
+  with_fileglob: ../templates/etc/nova/*
+  notify:
+    - restart nova services
+
+- name: nova sudoer
+  template: |
+    src=etc/sudoers.d/nova
+    dest=/etc/sudoers.d/nova
+    owner=root
+    group=root
+    mode=0440
+
+- include: logging.yml
+  tags:
+    - logrotate
+    - logging
+  when: logging.enabled|default('True')|bool

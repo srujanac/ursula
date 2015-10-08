@@ -1,0 +1,4 @@
+openstack_package_version: 11.0-bbc73
+openstack_package:
+  package_name: '{{ project_name }}'
+  rootwrap: "{{ rootwrap|default(False)|bool }}"

@@ -1,0 +1,31 @@
+---
+- name: update timezone
+  command: dpkg-reconfigure --frontend noninteractive tzdata
+
+- name: refresh CAs
+  command: update-ca-certificates
+
+- name: apply-sysctl
+  shell: "cat /etc/sysctl.conf /etc/sysctl.d/*.conf | sysctl -e -p -"
+
+- name: Changes to sysctl.conf
+  lineinfile:
+      dest=/tmp/1
+      regexp="{{ item.regexp }}"
+      line="{{ item.line }}"
+  with_items:
+      - { 'net.ipv4.conf.all.rp_filter=0' }
+      - { 'net.ipv4.conf.default.rp_filter=0' }
+      - { 'net.bridge.bridge-nf-call-iptables=1' }
+      - { 'net.bridge.bridge-nf-call-ip6tables=1' }
+      
+- name: update grub config
+  command: /usr/sbin/update-grub
+
+- include: ssh.yml
+
+- name: restart-ntp
+  service: name=ntp state=restarted
+
+- name: load sensors
+  shell: /usr/sbin/sensors-detect < /dev/null
