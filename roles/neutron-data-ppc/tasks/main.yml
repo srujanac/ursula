@@ -33,6 +33,9 @@
   notify:
     - restart neutron services
 
+- name: install neutron-linuxbridge-agent driver
+  apt: name=neutron-plugin-linuxbridge-agent state=latest
+
 - name: install neutron-linuxbridge-agent service
   upstart_service: name=neutron-linuxbridge-agent
                    user=neutron

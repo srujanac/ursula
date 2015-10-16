@@ -17,22 +17,8 @@
     - pkg-config
     - genisoimage
     - util-linux
+    - cpu-checker
   notify: restart nova services
-  #when: ansible_distribution_version == "12.04"
-
-#- name: install nova-compute packages (trusty)
-#  apt: pkg={{ item }}
-#  with_items:
-#    - libvirt-bin
-#    - python-libvirt
-#    - qemu-kvm
-#    - open-iscsi
-#    - libvirt-dev
-#    - pkg-config
-#    - genisoimage
-#    - util-linux
-#  notify: restart nova services
-  #when: ansible_distribution_version == "14.04"
 
 # in the case of packaging, we want to be sure that libvirt python
 # modules are built against the libvirt running on the host, so build
@@ -41,7 +27,6 @@
 # # would get re-created on this task, breaking things badly. pip module
 # # needs to be fixed first.
 - name: install libvirt-python in package venv
-  #command: "{{ 'nova'|ursula_package_path(openstack_package_version) }}/bin/pip install libvirt-python"
   command: "pip install libvirt-python"
   register: lvpout
   changed_when: lvpout.stdout|search("Successfully installed")

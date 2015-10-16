@@ -1,5 +1,4 @@
 ---
-# Power: Added neutron plugins for ovs
 - name: install other ovs packages
   apt: pkg={{ item }} 
   with_items:

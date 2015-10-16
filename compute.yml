@@ -13,6 +13,13 @@
       tags: ['common', 'security', 'errata']
 
 
+- name: openvswitch
+  hosts: network:compute
+  roles:
+    - role: openvswitch-ppc
+      tags: ['infra', 'data', 'openvswitch']
+
+
 - name: neutron core data plane
   gather_facts: force
   hosts: compute
