@@ -60,8 +60,12 @@
   notify: restart nova services
   when: cinder.fixed_key is not defined
 
+# Invoke services & to make upstart as the default instead of systemd
+- name: install upstart-sysv
+  apt: pkg=upstart-sysv
+
 - name: install nova-compute service
-  upstart_service: name=nova-compute user=nova cmd=/usr/local/bin/nova-compute
+  upstart_service: name=nova-compute user=nova cmd=/usr/bin/nova-compute
                    config_dirs=/etc/nova
 
 - name: start nova-compute
