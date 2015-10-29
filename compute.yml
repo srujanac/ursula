@@ -57,3 +57,9 @@
   tasks:
     - include: roles/common/tasks/noproxy.yml
       when: common.ansible_proxy is defined
+
+- name: allow ports to communicate services between controller and compute
+  hosts: controller:compute
+  roles:
+    - role: allow-ports
+      tags: ['openstack', 'allow-ports']

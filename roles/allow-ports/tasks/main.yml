@@ -1,0 +1,4 @@
+---
+- name: allow ports to communicate services between compute and controller
+  command: ufw allow {{ item }}
+  with_items: allow_ports
