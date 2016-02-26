@@ -1,0 +1,25 @@
+---
+- name: Set the number of subcores to 1
+  command: "ppc64_cpu --subcores-per-core=1"
+
+- name: Enable SMT on the host
+  command: "ppc64_cpu --smt=on"
+
+- name: Set the number of subcores to 4
+  command: "ppc64_cpu --subcores-per-core=4"
+
+- name: Adding subcores_per_core in rc.local
+  lineinfile:
+    dest: /etc/rc.local
+    line: "ppc64_cpu --subcores-per-core=1; ppc64_cpu --smt=on; ppc64_cpu --subcores-per-core=4"
+    insertbefore: "^exit"
+
+- name: check if SMT is enabled
+  command: "ppc64_cpu --smt"
+  failed_when: False
+  changed_when: False
+  register: smt
+
+- name: disable SMT for ppc64le
+  command: "ppc64_cpu --smt=off"
+  when: not smt.stdout|search("SMT is off")
